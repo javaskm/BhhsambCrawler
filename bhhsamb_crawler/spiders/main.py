@@ -1,4 +1,5 @@
 import scrapy
+from functools import partial
 
 BASE_URL = "https://www.bhhsamb.com"
 HEADERS = {
@@ -11,18 +12,22 @@ def agent_detail_link(l):
 
 class BhhSambSpider(scrapy.Spider):
     name = "bhhsamb"
-    start_urls = ["https://www.bhhsamb.com/CMS/CmsRoster/RosterSection?layoutID=963&pageSize=10&pageNumber=1&sortBy=firstname-asc"]
+    start_urls = ["https://www.bhhsamb.com/CMS/CmsRoster/RosterSection?layoutID=963&pageSize=10&pageNumber=1&sortBy=firstname-desc"]
 
     def start_requests(self):
         yield scrapy.Request(url=self.start_urls[0], headers=HEADERS)
 
-    def parse(self, response, **kwargs):
+    def parse(self, response, page_no=None):
         agents = response.css('a[class="site-roster-card-image-link"]::attr(href)').extract()
         agents_links = list(map(agent_detail_link, agents))
 
         for url in agents_links:
             yield scrapy.Request(url, callback=self.parse_agent)
-        return super().parse(response, **kwargs)
+
+        page_no = (page_no or 1) + 1
+        next_page = "https://www.bhhsamb.com/CMS/CmsRoster/RosterSection?layoutID=963&pageSize=10&pageNumber=%s&sortBy=firstname-desc" % (page_no)
+        callback = partial(self.parse, page_no=page_no)
+        yield scrapy.Request(next_page, callback=callback, headers=HEADERS)
     
     def parse_agent(self, response):
         """
