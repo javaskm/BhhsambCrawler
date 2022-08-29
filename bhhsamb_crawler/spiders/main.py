@@ -31,8 +31,8 @@ class BhhSambSpider(scrapy.Spider):
         name = response.css('p[class="rng-agent-profile-contact-name"]::text').get().strip()
         job_title = response.css('span[class="rng-agent-profile-contact-title"]::text').get()
         image_url = response.css('img[class="rng-agent-profile-photo"]::attr(src)').get()
-        address = " ".join(response.css('li[class="rng-agent-profile-contact-address"] strong').get().split()).replace('<strong>', '')
-        phone_number = response.css('li[class="rng-agent-profile-contact-phone"] a::text').extract_first(default='')
+        address = "".join(response.xpath('//li[@class="rng-agent-profile-contact-address"]//text()[normalize-space()]').extract()).strip()
+        phone_number = response.css('li[class="rng-agent-profile-contact-phone"] a::text').extract_first(default='').strip()
         offices = []
         languages = []
         description = response.css('article[class="rng-agent-profile-content"] span::text').get()
@@ -48,14 +48,14 @@ class BhhSambSpider(scrapy.Spider):
             'job_title': job_title,
             'image_url': image_url,
             'address': address,
+            'offices': offices,
+            'languages': languages,
+            'description': description,
             'contact_details': {
                 'Office': "",
                 'Fax': "",
                 'Cell': phone_number
             },
-            'offices': offices,
-            'languages': languages,
-            'description': description,
             'social_accounts': {
                 'facebook': facebook or '',
                 'twitter': twitter or '',
