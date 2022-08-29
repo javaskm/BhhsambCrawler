@@ -6,12 +6,12 @@ HEADERS = {
     'Referer': 'https://www.bhhsamb.com/roster/agents'
 }
 
-def agent_detail_link(l):
+def get_agent_detail_link(l):
     return BASE_URL + l
 
 
-class BhhSambSpider(scrapy.Spider):
-    name = "bhhsamb"
+class AgentSpider(scrapy.Spider):
+    name = "agent"
     start_urls = ["https://www.bhhsamb.com/CMS/CmsRoster/RosterSection?layoutID=963&pageSize=10&pageNumber=1&sortBy=firstname-desc"]
 
     def start_requests(self):
@@ -19,7 +19,7 @@ class BhhSambSpider(scrapy.Spider):
 
     def parse(self, response, page_no=None):
         agents = response.css('a[class="site-roster-card-image-link"]::attr(href)').extract()
-        agents_links = list(map(agent_detail_link, agents))
+        agents_links = list(map(get_agent_detail_link, agents))
 
         for url in agents_links:
             yield scrapy.Request(url, callback=self.parse_agent)
