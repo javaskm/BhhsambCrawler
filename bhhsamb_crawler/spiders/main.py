@@ -12,7 +12,7 @@ def get_agent_detail_link(l):
 
 class AgentSpider(scrapy.Spider):
     name = "agent"
-    start_urls = ["https://www.bhhsamb.com/CMS/CmsRoster/RosterSection?layoutID=963&pageSize=10&pageNumber=1&sortBy=firstname-desc"]
+    start_urls = ["https://www.bhhsamb.com/CMS/CmsRoster/RosterSection?layoutID=963&pageSize=10&pageNumber=1&sortBy=firstname-asc"]
 
     def start_requests(self):
         yield scrapy.Request(url=self.start_urls[0], headers=HEADERS)
@@ -25,7 +25,7 @@ class AgentSpider(scrapy.Spider):
             yield scrapy.Request(url, callback=self.parse_agent)
 
         page_no = (page_no or 1) + 1
-        next_page = "https://www.bhhsamb.com/CMS/CmsRoster/RosterSection?layoutID=963&pageSize=10&pageNumber=%s&sortBy=firstname-desc" % (page_no)
+        next_page = "https://www.bhhsamb.com/CMS/CmsRoster/RosterSection?layoutID=963&pageSize=10&pageNumber=%s&sortBy=firstname-asc" % (page_no)
         callback = partial(self.parse, page_no=page_no)
         yield scrapy.Request(next_page, callback=callback, headers=HEADERS)
     
@@ -33,20 +33,20 @@ class AgentSpider(scrapy.Spider):
         """
         To parse agent details
         """
-        name = response.css('p[class="rng-agent-profile-contact-name"]::text').get().strip()
-        job_title = response.css('span[class="rng-agent-profile-contact-title"]::text').get()
-        image_url = response.css('img[class="rng-agent-profile-photo"]::attr(src)').get()
+        name = response.xpath('//p[@class="rng-agent-profile-contact-name"]//text()').get().strip()
+        job_title = response.xpath('//span[@class="rng-agent-profile-contact-title"]//text()').extract_first(default="").strip()
+        image_url = response.xpath('//img[@class="rng-agent-profile-photo"]//@src').get()
         address = "".join(response.xpath('//li[@class="rng-agent-profile-contact-address"]//text()[normalize-space()]').extract()).strip()
-        phone_number = response.css('li[class="rng-agent-profile-contact-phone"] a::text').extract_first(default='').strip()
+        phone_number = response.xpath('//li[@class="rng-agent-profile-contact-phone"]//a/text()').extract_first(default="").strip()
         offices = []
         languages = []
-        description = response.css('article[class="rng-agent-profile-content"] span::text').get()
-        facebook =  response.css('li[class="social-facebook"] a::attr(href)').get()
-        twitter =  response.css('li[class="social-twitter"] a::attr(href)').get()
-        instagram = response.css('li[class="social-instagram"] a::attr(href)').get()
-        youtube = response.css('li[class="social-youtube"] a::attr(href)').get()
-        pinterest = response.css('li[class="social-pinterest"] a::attr(href)').get()
-        linkedin = response.css('li[class="social-linkedin"] a::attr(href)').get() 
+        description = response.xpath('//article[@class="rng-agent-profile-content"]//span/text()').extract_first(default="").strip()
+        facebook =  response.xpath('//li[@class="social-facebook"]//a/@href').get()
+        twitter =  response.xpath('//li[@class="social-twitter"]//a/@href').get()
+        linkedin = response.xpath('//li[@class="social-linkedin"]//a/@href').get()
+        youtube = response.xpath('//li[@class="social-youtube"]//a/@href').get()
+        pinterest = response.xpath('//li[@class="social-pinterest"]//a/@href').get()
+        instagram = response.xpath('//li[@class="social-instagram"]//a/@href').get()
         
         yield {
             'name': name,
@@ -62,11 +62,11 @@ class AgentSpider(scrapy.Spider):
                 'Cell': phone_number
             },
             'social_accounts': {
-                'facebook': facebook or '',
-                'twitter': twitter or '',
-                'linkedin': linkedin or '',
-                'youtube': youtube or '',
-                'pinterest': pinterest or '',
-                'instagram': instagram or ''
+                'facebook': facebook,
+                'twitter': twitter,
+                'linkedin': linkedin,
+                'youtube': youtube,
+                'pinterest': pinterest,
+                'instagram': instagram
             }
         }
